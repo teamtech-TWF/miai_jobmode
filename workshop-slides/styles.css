@@ -1,0 +1,460 @@
+/* ============================================================
+   MIAI 2.0 TWF — Material 3 + Glassmorphism + Pastel Ink-Brush
+   ============================================================ */
+
+:root {
+  /* Ink + paper */
+  --ink: #1c1b22;
+  --ink-soft: #2c2b33;
+  --muted: #56535e;
+  --paper-a: #f4f3f9;
+  --paper-b: #ece9f5;
+
+  /* Material primary */
+  --primary: #6f5bb8;
+  --primary-strong: #5946a0;
+  --on-primary: #ffffff;
+  --primary-container: #e9e0ff;
+
+  /* Section pastels (tint glass at low alpha) */
+  --pastel-opening: #bcd9f4;   /* sky */
+  --pastel-definitions: #c9b6f0; /* lavender */
+  --pastel-modes: #b9e3d4;       /* mint */
+  --pastel-activity: #f6cdb5;    /* peach */
+  --pastel-capture: #f4c2cf;     /* blush */
+  --pastel-outputs: #c3c6f0;     /* periwinkle */
+  --pastel-close: #f3e3ad;       /* butter */
+  --section-pastel: var(--pastel-opening); /* runtime override */
+
+  /* Glass + lines */
+  --glass: rgba(255, 255, 255, 0.55);
+  --glass-strong: rgba(255, 255, 255, 0.72);
+  --glass-fallback: #fbfaff;
+  --hairline: rgba(255, 255, 255, 0.65);
+  --line: rgba(28, 27, 34, 0.08);
+
+  /* Material elevation (soft, violet-tinted) */
+  --elev-1: 0 4px 14px rgba(80, 64, 140, 0.10), 0 1px 3px rgba(28, 27, 34, 0.06);
+  --elev-2: 0 14px 40px rgba(80, 64, 140, 0.14), 0 2px 6px rgba(28, 27, 34, 0.06);
+  --elev-3: 0 28px 70px rgba(80, 64, 140, 0.20), 0 4px 10px rgba(28, 27, 34, 0.08);
+
+  /* Radii */
+  --r-slide: 32px;
+  --r-panel: 24px;
+  --r-table: 18px;
+  --r-pill: 999px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Google Sans", "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background:
+    /* pastel brush blobs */
+    radial-gradient(circle at 12% 18%, rgba(188, 217, 244, 0.55), transparent 32%),
+    radial-gradient(circle at 88% 14%, rgba(246, 205, 181, 0.50), transparent 30%),
+    radial-gradient(circle at 78% 82%, rgba(185, 227, 212, 0.50), transparent 34%),
+    radial-gradient(circle at 18% 84%, rgba(244, 194, 207, 0.45), transparent 32%),
+    radial-gradient(circle at 50% 50%, rgba(201, 182, 240, 0.30), transparent 45%),
+    /* ink-wash paper */
+    linear-gradient(180deg, var(--paper-a) 0%, var(--paper-b) 100%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Fixed ink-grain texture overlay for the paper/brush feel */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.10'/%3E%3C/svg%3E");
+}
+
+/* Drifting pastel brush blobs behind the deck */
+.ambient {
+  position: fixed;
+  z-index: 0;
+  border-radius: 999px;
+  filter: blur(60px);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.ambient-a {
+  top: 6vh;
+  right: 6vw;
+  width: 26rem;
+  height: 26rem;
+  background: radial-gradient(circle, rgba(195, 198, 240, 0.65), transparent 70%);
+}
+
+.ambient-b {
+  left: 2vw;
+  bottom: 8vh;
+  width: 22rem;
+  height: 22rem;
+  background: radial-gradient(circle, rgba(185, 227, 212, 0.55), transparent 70%);
+}
+
+.ambient-c {
+  top: 40vh;
+  left: 55vw;
+  width: 18rem;
+  height: 18rem;
+  background: radial-gradient(circle, rgba(244, 194, 207, 0.45), transparent 70%);
+}
+
+/* All real content sits above background layers */
+.topbar,
+.progress-track,
+.deck,
+.bookmark-rail,
+.nav-controls {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------- Topbar ---------- */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: end;
+  padding: 2rem 2rem 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+.status {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+/* ---------- Progress ---------- */
+.progress-track {
+  margin: 0 2rem 1.2rem;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: rgba(28, 27, 34, 0.08);
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--primary), var(--primary-strong));
+  transition: width 200ms ease-out;
+}
+
+/* ---------- Deck + glass slides ---------- */
+.deck {
+  padding: 0 2rem 6rem;
+}
+
+.slide {
+  display: none;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-slide);
+  background: var(--glass-fallback);
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  box-shadow: var(--elev-2);
+  transition: box-shadow 220ms ease-out, transform 220ms ease-out;
+}
+
+.slide.active {
+  display: block;
+  box-shadow: var(--elev-3);
+}
+
+.slide h2 {
+  margin: 0 0 0.8rem;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 600;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+
+.lede {
+  margin: 0 0 1.5rem;
+  max-width: 44rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* ---------- Glass surfaces (panels, cards, tables, quotes) ---------- */
+.panel,
+.card,
+.artifact-table,
+.quote-block {
+  position: relative;
+  background: var(--glass-fallback);
+  /* tinted translucent glass, blended with the section pastel */
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.32)),
+    var(--section-pastel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-panel);
+  box-shadow: var(--elev-1);
+  /* soft inner top highlight for the glass look */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    var(--elev-1);
+}
+
+.panel,
+.quote-block {
+  padding: 1.25rem;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---------- Lists ---------- */
+.agenda-list,
+.bullet-list,
+.capture-list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.agenda-list li,
+.bullet-list li,
+.capture-list li {
+  margin-bottom: 0.65rem;
+  line-height: 1.55;
+}
+
+/* ---------- Card grid ---------- */
+.slide-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 0.95fr;
+  gap: 1.5rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  padding: 1rem;
+  transition: transform 180ms ease-out, box-shadow 180ms ease-out;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    var(--elev-2);
+}
+
+.card h3,
+.panel h3,
+.quote-block h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+/* ---------- Artifact table ---------- */
+.artifact-table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+}
+
+.artifact-table th,
+.artifact-table td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.artifact-table th {
+  background: var(--primary-container);
+  color: var(--primary-strong);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.artifact-table tr:last-child td {
+  border-bottom: 0;
+}
+
+/* ---------- Quote ---------- */
+.quote-block {
+  border-left: 6px solid var(--primary);
+}
+
+.quote-block p {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.6;
+}
+
+/* ---------- Bookmark rail ---------- */
+.bookmark-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  padding: 1rem 2rem 6rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.bookmark {
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--ink);
+  padding: 0.5rem 0.9rem;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 160ms ease-out, color 160ms ease-out, transform 160ms ease-out;
+}
+
+.bookmark:hover {
+  background: rgba(255, 255, 255, 0.75);
+  transform: translateY(-1px);
+}
+
+.bookmark.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+  box-shadow: var(--elev-1);
+}
+
+/* ---------- Nav controls ---------- */
+.nav-controls {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  display: flex;
+  gap: 0.75rem;
+  z-index: 2;
+}
+
+.nav-controls button {
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--primary);
+  color: var(--on-primary);
+  padding: 0.8rem 1.15rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--elev-2);
+  transition: background 160ms ease-out, transform 160ms ease-out, box-shadow 160ms ease-out;
+}
+
+.nav-controls button:hover {
+  background: var(--primary-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--elev-3);
+}
+
+.nav-controls button:focus-visible {
+  outline: 3px solid var(--primary-container);
+  outline-offset: 2px;
+}
+
+/* ---------- Section pastel theming ---------- */
+.slide[data-section="opening"]      { --section-pastel: var(--pastel-opening); }
+.slide[data-section="definitions"]  { --section-pastel: var(--pastel-definitions); }
+.slide[data-section="modes"]        { --section-pastel: var(--pastel-modes); }
+.slide[data-section="activity"]     { --section-pastel: var(--pastel-activity); }
+.slide[data-section="capture"]      { --section-pastel: var(--pastel-capture); }
+.slide[data-section="outputs"]      { --section-pastel: var(--pastel-outputs); }
+.slide[data-section="close"]        { --section-pastel: var(--pastel-close); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 820px) {
+  .topbar,
+  .deck,
+  .bookmark-rail {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .slide {
+    padding: 1.3rem;
+    border-radius: 24px;
+  }
+
+  .slide-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .status {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+
+  .nav-controls {
+    right: 1rem;
+    left: 1rem;
+    justify-content: space-between;
+  }
+}
+
+/* Graceful fallback when backdrop-filter is unavailable */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .slide,
+  .bookmark {
+    background: var(--glass-fallback);
+  }
+  .panel,
+  .card,
+  .artifact-table,
+  .quote-block {
+    background: var(--glass-fallback);
+  }
+}

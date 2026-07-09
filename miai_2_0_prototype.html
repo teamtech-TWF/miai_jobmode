@@ -1,0 +1,3268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiAI 2.0 Demo</title>
+  <style>
+    :root {
+      --bg: #edf2fb;
+      --panel: rgba(255, 255, 255, 0.84);
+      --panel-2: rgba(255, 255, 255, 0.72);
+      --panel-3: rgba(248, 250, 255, 0.9);
+      --ink: #0b1220;
+      --muted: #334155;
+      --line: rgba(148, 163, 184, 0.4);
+      --line-strong: rgba(15, 23, 42, 0.24);
+      --soft: rgba(226, 232, 240, 0.8);
+      --accent: #111111;
+      --accent-soft: rgba(17, 17, 17, 0.16);
+      --shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+      --glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+      --blur: blur(18px);
+      --focus-ring: 0 0 0 3px rgba(10, 132, 255, 0.2);
+      --radius: 20px;
+      --radius-sm: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 12% 16%, rgba(15, 23, 42, 0.18), transparent 24%),
+        radial-gradient(circle at 86% 18%, rgba(51, 65, 85, 0.16), transparent 24%),
+        radial-gradient(circle at 76% 74%, rgba(15, 23, 42, 0.1), transparent 22%),
+        linear-gradient(180deg, #f6f9ff 0%, #eaf0fb 52%, #edf1f9 100%);
+      color: var(--ink);
+      font-family: "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+    }
+
+    body {
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto;
+      width: 460px;
+      height: 460px;
+      border-radius: 50%;
+      filter: blur(50px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.88;
+    }
+
+    body::before {
+      top: -120px;
+      left: -80px;
+      background: radial-gradient(circle, rgba(15, 23, 42, 0.24) 0%, rgba(15, 23, 42, 0.08) 42%, transparent 74%);
+    }
+
+    body::after {
+      right: -120px;
+      top: 90px;
+      background: radial-gradient(circle, rgba(51, 65, 85, 0.22) 0%, rgba(51, 65, 85, 0.08) 44%, transparent 74%);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #526077;
+      opacity: 1;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+      width: 100%;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(22px);
+      opacity: 0.9;
+      mix-blend-mode: screen;
+    }
+
+    .bubble.red-a {
+      width: 360px;
+      height: 360px;
+      top: 14%;
+      right: 11%;
+      background: radial-gradient(circle at 35% 35%, rgba(148, 163, 184, 0.58), rgba(51, 65, 85, 0.24) 45%, transparent 72%);
+    }
+
+    .bubble.blue-a {
+      width: 420px;
+      height: 420px;
+      left: 54%;
+      bottom: 4%;
+      background: radial-gradient(circle at 45% 40%, rgba(226, 232, 240, 0.84), rgba(71, 85, 105, 0.22) 48%, transparent 74%);
+    }
+
+    .bubble.red-b {
+      width: 240px;
+      height: 240px;
+      left: 8%;
+      bottom: 18%;
+      background: radial-gradient(circle at 40% 40%, rgba(203, 213, 225, 0.54), rgba(71, 85, 105, 0.16) 46%, transparent 74%);
+    }
+
+    .bubble.blue-b {
+      width: 220px;
+      height: 220px;
+      right: 32%;
+      top: 42%;
+      background: radial-gradient(circle at 45% 40%, rgba(241, 245, 249, 0.74), rgba(100, 116, 139, 0.14) 46%, transparent 74%);
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 18px;
+      border-right: 1px solid rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.56);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+
+    .brand {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.7));
+      box-shadow: var(--glass-shadow), var(--shadow);
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      line-height: 1;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .brand h1 {
+      margin: 9px 0 7px;
+      font-size: 26px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .brand p,
+    .muted {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .nav-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .nav-button {
+      width: 100%;
+      padding: 13px 15px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.66));
+      color: var(--ink);
+      text-align: left;
+      box-shadow: var(--glass-shadow);
+      transition: 140ms ease;
+      min-height: 46px;
+    }
+
+    .nav-button:hover {
+      border-color: rgba(17, 17, 17, 0.22);
+      transform: translateY(-1px);
+    }
+
+    .nav-button.active {
+      background: linear-gradient(135deg, rgba(17, 17, 17, 0.92), rgba(58, 58, 58, 0.92));
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.22);
+      box-shadow: 0 22px 36px rgba(27, 40, 78, 0.22);
+    }
+
+    .nav-button.active .eyebrow,
+    .nav-button.active span {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .nav-button strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .nav-button span {
+      display: block;
+      font-size: 12px;
+      line-height: 1.35;
+      opacity: 0.78;
+    }
+
+    .main {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .topbar,
+    .card,
+    .wire-panel,
+    .info-card,
+    .stat,
+    .chip,
+    .project-card,
+    .table-card,
+    .workspace-panel,
+    .artifact-card,
+    .message,
+    .action-row button,
+    .mode-card,
+    .export-card,
+    .check-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--panel), rgba(255, 255, 255, 0.72));
+      box-shadow: var(--glass-shadow), var(--shadow);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+    }
+
+    .topbar {
+      padding: 16px 18px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .title-wrap h2 {
+      margin: 7px 0 4px;
+      font-size: 30px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .title-wrap p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 96ch;
+      font-size: 14px;
+    }
+
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: var(--glass-shadow);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .screen-shell {
+      display: grid;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .hero-grid,
+    .split-2,
+    .split-3,
+    .dashboard-grid,
+    .project-grid,
+    .modes-grid,
+    .job-grid,
+    .artifact-grid,
+    .export-grid,
+    .details-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-grid {
+      grid-template-columns: 1.2fr 0.8fr;
+    }
+
+    .dashboard-grid {
+      grid-template-columns: 1.4fr 0.8fr;
+    }
+
+    .split-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .split-3 {
+      grid-template-columns: 1.1fr 1fr 0.8fr;
+    }
+
+    .details-grid {
+      grid-template-columns: 1.2fr 0.8fr;
+    }
+
+    .project-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .modes-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .job-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .artifact-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .export-grid {
+      grid-template-columns: 1fr 0.82fr;
+    }
+
+    .card,
+    .wire-panel,
+    .info-card,
+    .workspace-panel,
+    .table-card {
+      padding: 16px;
+    }
+
+    .section-title {
+      margin: 7px 0 11px;
+      font-size: 20px;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    .section-copy {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      padding: 16px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1;
+      margin-top: 6px;
+      letter-spacing: -0.04em;
+    }
+
+    .project-card,
+    .mode-card,
+    .artifact-card,
+    .export-card,
+    .check-card {
+      padding: 16px;
+    }
+
+    .project-card.selected,
+    .mode-card.selected,
+    .artifact-card.selected,
+    .export-card.selected {
+      border-color: rgba(10, 132, 255, 0.34);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 255, 0.78));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8), 0 20px 40px rgba(21, 40, 78, 0.12);
+    }
+
+    .project-head,
+    .item-head,
+    .workspace-head,
+    .message-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.62);
+      background: rgba(255, 255, 255, 0.76);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .badge.inverse {
+      background: linear-gradient(135deg, #111111, #3a3a3a);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.24);
+    }
+
+    .badge.outline {
+      background: transparent;
+      border-style: dashed;
+    }
+
+    .project-card h4,
+    .mode-card h4,
+    .artifact-card h4,
+    .export-card h4,
+    .check-card h4,
+    .workspace-panel h4,
+    .info-card h4 {
+      margin: 9px 0 7px;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+
+    .mini {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .progress {
+      height: 8px;
+      width: 100%;
+      background: rgba(203, 213, 225, 0.55);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 12px 0 10px;
+    }
+
+    .progress > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #111111, #4b5563);
+      border-radius: inherit;
+    }
+
+    .meta-row,
+    .chip-row,
+    .filters,
+    .composer,
+    .action-row,
+    .check-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .meta-row {
+      gap: 12px;
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+      min-width: 0;
+    }
+
+    .chip {
+      padding: 8px 11px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .chip.interactive:hover {
+      border-color: rgba(17, 17, 17, 0.24);
+    }
+
+    .button,
+    .action-row button,
+    .composer button,
+    .filters button {
+      padding: 10px 13px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.78);
+      color: var(--ink);
+      box-shadow: var(--glass-shadow);
+      min-height: 42px;
+      font-weight: 600;
+    }
+
+    .button.primary,
+    .action-row button.primary,
+    .composer button,
+    .filters button.primary {
+      background: linear-gradient(135deg, #111111, #3a3a3a);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .button.ghost,
+    .action-row button.ghost {
+      background: transparent;
+      border-style: dashed;
+    }
+
+    .input,
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid rgba(148, 163, 184, 0.44);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.88);
+      color: var(--ink);
+      padding: 11px 13px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      min-height: 42px;
+    }
+
+    textarea {
+      min-height: 108px;
+      resize: vertical;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 1.5fr repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .list,
+    .table-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .list-item {
+      padding: 11px 13px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.72);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 0.9fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .chat-mode-shell {
+      display: grid;
+      grid-template-columns: 252px minmax(0, 1.55fr) 332px;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .thread-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .thread-card {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+      text-align: left;
+      box-shadow: var(--glass-shadow);
+      min-height: 84px;
+    }
+
+    .thread-card.active {
+      border-color: rgba(10, 132, 255, 0.34);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 251, 255, 0.8));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.84), 0 20px 40px rgba(21, 40, 78, 0.12);
+    }
+
+    .thread-card h4 {
+      margin: 8px 0 5px;
+      font-size: 15px;
+      line-height: 1.25;
+    }
+
+    .thread-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .job-mode-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .job-mode-card {
+      min-height: 168px;
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      text-align: left;
+    }
+
+    .job-mode-card .meta-row {
+      margin-top: 4px;
+    }
+
+    .workspace-panel {
+      min-height: 620px;
+      display: grid;
+      align-content: start;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tab {
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      background: rgba(255, 255, 255, 0.72);
+      font-size: 13px;
+      font-weight: 700;
+      min-height: 38px;
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, rgba(17, 17, 17, 0.9), rgba(58, 58, 58, 0.9));
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.24);
+    }
+
+    .preview-box {
+      min-height: 170px;
+      padding: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.78);
+      white-space: pre-line;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .messages {
+      display: grid;
+      gap: 12px;
+      min-height: 340px;
+      align-content: start;
+    }
+
+    .message {
+      padding: 14px;
+    }
+
+    .message.user {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.7));
+    }
+
+    .message.assistant {
+      background: linear-gradient(180deg, rgba(247, 251, 255, 0.94), rgba(240, 247, 255, 0.8));
+      border-color: rgba(10, 132, 255, 0.26);
+    }
+
+    .message-body {
+      margin-top: 8px;
+      white-space: pre-line;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .sources {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .composer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      margin-top: auto;
+      min-width: 0;
+    }
+
+    .workspace-head > *,
+    .project-head > *,
+    .item-head > *,
+    .message-head > * {
+      min-width: 0;
+    }
+
+    .workspace-head h4,
+    .project-card h4,
+    .mode-card h4,
+    .artifact-card h4,
+    .export-card h4,
+    .thread-card h4,
+    .section-title,
+    .title-wrap h2 {
+      overflow-wrap: anywhere;
+    }
+
+    .table-card table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      table-layout: fixed;
+    }
+
+    .table-card th,
+    .table-card td {
+      padding: 10px 8px;
+      text-align: left;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+      vertical-align: top;
+      line-height: 1.55;
+    }
+
+    .table-card th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .check-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .check {
+      display: flex;
+      gap: 10px;
+      align-items: start;
+      padding: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.32);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.72);
+      min-height: 46px;
+    }
+
+    .check input {
+      width: 18px;
+      height: 18px;
+      margin: 1px 0 0;
+      accent-color: var(--accent);
+    }
+
+    .footnote {
+      padding: 16px 18px;
+      border: 1px dashed rgba(17, 17, 17, 0.28);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.72);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    .tab:focus-visible,
+    .nav-button:focus-visible,
+    .chip.interactive:focus-visible {
+      outline: none;
+      border-color: rgba(17, 17, 17, 0.4);
+      box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.14);
+    }
+
+    button:disabled,
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto;
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+
+    @media (max-width: 1440px) {
+      .app {
+        grid-template-columns: 244px 1fr;
+      }
+
+      .sidebar {
+        padding: 16px;
+        gap: 14px;
+      }
+
+      .main {
+        padding: 16px;
+        gap: 14px;
+      }
+
+      .topbar,
+      .card,
+      .wire-panel,
+      .info-card,
+      .stat,
+      .chip,
+      .project-card,
+      .table-card,
+      .workspace-panel,
+      .artifact-card,
+      .message,
+      .action-row button,
+      .mode-card,
+      .export-card,
+      .check-card {
+        border-radius: 16px;
+      }
+
+      .topbar {
+        padding: 16px 18px;
+      }
+
+      .title-wrap h2 {
+        font-size: 30px;
+      }
+
+      .section-title {
+        font-size: 20px;
+        margin-bottom: 10px;
+      }
+
+      .hero-grid,
+      .dashboard-grid,
+      .split-3,
+      .details-grid,
+      .export-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .split-2 {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+
+      .modes-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .job-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .workspace {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+
+      .chat-mode-shell {
+        grid-template-columns: 248px minmax(0, 1fr);
+      }
+
+      .chat-mode-shell .workspace-panel:last-child {
+        grid-column: 1 / -1;
+      }
+
+      .workspace-panel:last-child {
+        grid-column: 1 / -1;
+      }
+
+      .filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .artifact-grid,
+      .project-grid,
+      .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 1280px) {
+      .app {
+        grid-template-columns: 220px 1fr;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .top-actions {
+        justify-content: flex-start;
+      }
+
+      .hero-grid,
+      .dashboard-grid,
+      .split-2,
+      .split-3,
+      .details-grid,
+      .workspace,
+      .chat-mode-shell,
+      .export-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .modes-grid,
+      .job-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .workspace-panel {
+        min-height: auto;
+      }
+
+      .filters {
+        grid-template-columns: 1fr;
+      }
+
+      .project-grid,
+      .artifact-grid,
+      .stats,
+      .check-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 1080px) {
+      .main {
+        padding: 14px;
+      }
+
+      .topbar {
+        padding: 16px;
+      }
+
+      .title-wrap h2 {
+        font-size: 28px;
+      }
+
+      .job-grid,
+      .modes-grid,
+      .project-grid,
+      .artifact-grid,
+      .stats,
+      .check-grid,
+      .thread-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .job-mode-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chat-mode-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .composer {
+        grid-template-columns: 1fr;
+      }
+
+      .composer button {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.32);
+        max-height: none;
+      }
+
+      .stats,
+      .project-grid,
+      .modes-grid,
+      .job-grid,
+      .artifact-grid,
+      .check-grid,
+      .filters,
+      .thread-list {
+        grid-template-columns: 1fr;
+      }
+
+      .workspace-head,
+      .project-head,
+      .item-head,
+      .message-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .action-row,
+      .top-actions,
+      .meta-row,
+      .chip-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .action-row button,
+      .chip-row .chip {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 720px) {
+      body::before,
+      body::after,
+      .backdrop {
+        opacity: 0.5;
+      }
+
+      .main,
+      .sidebar {
+        padding: 12px;
+      }
+
+      .topbar,
+      .card,
+      .wire-panel,
+      .info-card,
+      .stat,
+      .project-card,
+      .table-card,
+      .workspace-panel,
+      .artifact-card,
+      .message,
+      .mode-card,
+      .export-card,
+      .check-card,
+      .thread-card {
+        padding: 14px;
+        border-radius: 14px;
+      }
+
+      .title-wrap h2 {
+        font-size: 24px;
+      }
+
+      .section-title {
+        font-size: 18px;
+      }
+
+      .section-copy,
+      .message-body,
+      .preview-box,
+      .list-item {
+        font-size: 14px;
+      }
+
+      .nav-button {
+        padding: 12px 14px;
+      }
+
+      .job-mode-card {
+        min-height: auto;
+      }
+
+      .table-card {
+        overflow-x: auto;
+      }
+
+      .table-card table {
+        min-width: 520px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .brand h1 {
+        font-size: 24px;
+      }
+
+      .title-wrap h2 {
+        font-size: 22px;
+      }
+
+      .nav-button strong,
+      .project-card h4,
+      .mode-card h4,
+      .artifact-card h4,
+      .export-card h4,
+      .thread-card h4 {
+        font-size: 15px;
+      }
+
+      input,
+      select,
+      textarea,
+      .button,
+      .action-row button,
+      .composer button,
+      .filters button {
+        min-height: 46px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true">
+    <div class="bubble red-a"></div>
+    <div class="bubble blue-a"></div>
+    <div class="bubble red-b"></div>
+    <div class="bubble blue-b"></div>
+  </div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="eyebrow">MiAI 2.0</div>
+        <h1>Workspace</h1>
+        <p>Governed project flow from setup to export.</p>
+      </div>
+      <div class="nav-list" id="nav-list"></div>
+    </aside>
+
+    <main class="main">
+      <section class="topbar">
+        <div class="title-wrap">
+          <div class="eyebrow">Active Screen</div>
+          <h2 id="screen-title">Dashboard</h2>
+          <p id="screen-copy">See all active projects, review pressure, and next actions at a glance.</p>
+        </div>
+        <div class="top-actions">
+          <div class="pill">Project: McCain x Makro Thailand</div>
+          <div class="pill" id="top-status-pill">Status: Awaiting Review</div>
+          <div class="pill">Sprint #1</div>
+        </div>
+      </section>
+
+      <section class="screen-shell" id="screen-shell"></section>
+    </main>
+  </div>
+
+  <script>
+    const screens = [
+      {
+        id: "dashboard",
+        label: "Dashboard",
+        copy: "See all active projects, review pressure, and next actions at a glance.",
+        flowIndex: 0
+      },
+      {
+        id: "create-project",
+        label: "Create Project",
+        copy: "Start from files, instruction plus files, or a structured brief.",
+        flowIndex: 1
+      },
+      {
+        id: "context-packet",
+        label: "Context Packet",
+        copy: "Review extracted context, missing fields, confidence, and evidence before launch.",
+        flowIndex: 2
+      },
+      {
+        id: "job-mode",
+        label: "Select Job Mode",
+        copy: "Choose the workflow, activated agents, and expected artifacts.",
+        flowIndex: 3
+      },
+      {
+        id: "chat-mode",
+        label: "Chat Mode",
+        copy: "Work project-wide with MiAI agents, refine direction, and send changes back into artifacts.",
+        flowIndex: 4
+      },
+      {
+        id: "artifacts-chat",
+        label: "Artifacts + Chat",
+        copy: "Review artifacts, inspect evidence, govern outputs, and ask project-grounded questions.",
+        flowIndex: 5
+      },
+      {
+        id: "export",
+        label: "Export",
+        copy: "Preview and export the approved final artifact as PDF, PPTX, or DOCX.",
+        flowIndex: 6
+      }
+    ];
+
+    const flowSteps = [
+      {
+        title: "Dashboard",
+        text: "Project status, review queue, and active runtime."
+      },
+      {
+        title: "Create Project",
+        text: "Pick the right input path for the job."
+      },
+      {
+        title: "Context Packet",
+        text: "Validate extracted understanding before agents run."
+      },
+      {
+        title: "Select Job Mode",
+        text: "Define workflow, agents, and output expectations."
+      },
+      {
+        title: "Agent Pipeline",
+        text: "Specialist agents generate structured artifacts."
+      },
+      {
+        title: "Artifacts + Chat",
+        text: "Review, revise, ask, cite, and govern."
+      },
+      {
+        title: "Export Final Artifact",
+        text: "Lock, preview, and export approved work."
+      }
+    ];
+
+    const state = {
+      currentScreen: "dashboard",
+      creationMode: "file-first",
+      projectCreation: {
+        projectName: "McCain x Makro Thailand",
+        fileFirstFiles: [
+          { name: "brief_v3.pdf", status: "Extracting", kind: "Brief" },
+          { name: "retail_scan.xlsx", status: "Completed", kind: "Data" },
+          { name: "consumer_notes.docx", status: "Queued", kind: "Notes" }
+        ],
+        instructionFiles: [
+          { name: "makro_channel_deck.pptx", status: "Completed", kind: "Deck" },
+          { name: "frozen_category_scan.pdf", status: "Completed", kind: "Report" }
+        ],
+        instructionText: "Build a strategy recommendation for McCain fries in Makro Thailand focused on Healthy Convenience positioning and export it as a client-facing storyline.",
+        brief: {
+          businessGoal: "Build a strategy recommendation for McCain fries in Makro Thailand.",
+          audience: "Makro buyers across family shoppers and Horeca operators",
+          marketContext: "Frozen fries category with convenience-led demand and rising air-fryer behavior",
+          constraints: "Need client-facing storyline and evidence traceability",
+          deliverableType: "Strategy blueprint plus presentation storyline"
+        }
+      },
+      selectedProjectId: "mccain",
+      selectedJobMode: "strategy-development",
+      activeChatAgent: "Strategy Agent",
+      activeChatThreadId: "direction",
+      activeArtifactId: "strategy",
+      activeArtifactTab: "preview",
+      exportFormat: "pdf",
+      exportReady: false,
+      contextFields: {
+        businessGoal: "Build a strategy recommendation for McCain fries in Makro Thailand focused on Healthy Convenience positioning.",
+        audience: "Makro buyers across family shoppers and Horeca operators.",
+        timeline: "Q3 2026",
+        requiredOutput: "Strategy blueprint plus client-facing storyline",
+        missingField: ""
+      },
+      sourceExpansion: {
+        urlInput: "",
+        webQueryInput: "",
+        files: [
+          { name: "horeca_interview_notes.docx", status: "Suggested", kind: "Interview Notes" }
+        ],
+        links: [
+          { title: "Makro Horeca Playbook", status: "Linked", url: "https://example.com/makro-horeca-playbook" }
+        ],
+        webQueries: [
+          { query: "Thailand horeca frozen food operator needs 2026", status: "Suggested" }
+        ]
+      },
+      projectChatInput: "",
+      projectChatThreads: [
+        {
+          id: "direction",
+          title: "Direction stress test",
+          purpose: "Challenge the main strategic direction before lock.",
+          agent: "Strategy Agent",
+          messages: [
+            {
+              role: "assistant",
+              time: "10:41",
+              agent: "Strategy Agent",
+              body: "Project chat is ready. Use separate threads for distinct work so each conversation stays focused and efficient."
+            },
+            {
+              role: "user",
+              time: "10:42",
+              body: "Pressure-test the Healthy Convenience direction before we finalize the storyline."
+            },
+            {
+              role: "assistant",
+              time: "10:42",
+              agent: "Strategy Agent",
+              body: "The direction is strong for family shoppers, but the Horeca rationale is still lighter than the retail case. I would tighten the operator proof before locking the artifact.",
+              targetsArtifact: "strategy"
+            }
+          ]
+        },
+        {
+          id: "deck",
+          title: "Client deck rewrite",
+          purpose: "Convert strategy thinking into presentation language.",
+          agent: "Storytelling Agent",
+          messages: [
+            {
+              role: "assistant",
+              time: "10:43",
+              agent: "Storytelling Agent",
+              body: "Use this thread for storyline structure, slide order, and narrative compression so it does not pollute the strategy thread.",
+              targetsArtifact: "storytelling"
+            }
+          ]
+        }
+      ],
+      artifacts: [
+        {
+          id: "context",
+          title: "Context Summary",
+          agent: "Context Agent",
+          version: "v1.0",
+          confidence: 92,
+          evidence: 18,
+          status: "Approved",
+          preview: "Context Summary\n\nMiAI consolidated the brief, category scans, channel notes, and timing constraints into one trusted working context.",
+          tabs: {
+            preview: "Context Summary\n\nMiAI consolidated the brief, category scans, channel notes, and timing constraints into one trusted working context.",
+            evidence: "Evidence\n\nSource 12 - retail frequency baseline\nSource 15 - purchase drivers 2026\nSource 17 - competitor category gap",
+            versions: "Version History\n\nv1.0 - Approved - 11 May 2026 - Locked as active project context",
+            notes: "Notes\n\nApproved assumptions on category framing.\nContext is strong enough for downstream strategy generation.",
+            activity: "Activity\n\n11 May 2026 - Approved by MI reviewer\n10 May 2026 - Created by Context Agent"
+          }
+        },
+        {
+          id: "diagnosis",
+          title: "Diagnosis Artifact",
+          agent: "Diagnosis Agent",
+          version: "v1.1",
+          confidence: 88,
+          evidence: 23,
+          status: "Awaiting Review",
+          preview: "Diagnosis Artifact\n\nConsumer and channel diagnosis indicates a convenience-led opportunity, but HoReCa confidence still needs stronger support.",
+          tabs: {
+            preview: "Diagnosis Artifact\n\nConsumer and channel diagnosis indicates a convenience-led opportunity, but HoReCa confidence still needs stronger support.",
+            evidence: "Evidence\n\nSource 15 - purchase drivers 2026\nSource 17 - frozen category frequency\nSource 22 - operator prep behavior interviews",
+            versions: "Version History\n\nv1.1 - Awaiting Review\nv1.0 - Draft",
+            notes: "Notes\n\nNeed stronger data on HoReCa.\nClarify operator use-case weighting.",
+            activity: "Activity\n\n11 May 2026 - Edited by Diagnosis Agent\n10 May 2026 - Created by Diagnosis Agent"
+          }
+        },
+        {
+          id: "strategy",
+          title: "Strategy Artifact",
+          agent: "Strategy Agent",
+          version: "v1.2",
+          confidence: 90,
+          evidence: 27,
+          status: "Awaiting Review",
+          preview: "Strategy Artifact\n\nThis strategy recommends Healthy Convenience as the lead positioning for McCain fries in Makro Thailand. The strongest pillars are quick preparation, air-fryer friendliness, and confidence in practical use cases.",
+          tabs: {
+            preview: "Strategy Artifact\n\nThis strategy recommends Healthy Convenience as the lead positioning for McCain fries in Makro Thailand. The strongest pillars are quick preparation, air-fryer friendliness, and confidence in practical use cases.",
+            evidence: "Evidence\n\nSource 12 - market survey 2026\nSource 15 - purchase drivers 2026\nSource 17 - competitor report Q1'26\nSource 31 - air-fryer usage signal",
+            versions: "Version History\n\nv1.2 - Awaiting Review\nv1.1 - Draft\nv1.0 - Draft",
+            notes: "Notes\n\nDirection is good. Need stronger data on HoReCa.\nTighten client-facing phrasing before export.",
+            activity: "Activity\n\n11 May 2026 - Regenerated by Strategy Agent\n11 May 2026 - Review note added by Nicha\n10 May 2026 - Created by Strategy Agent"
+          }
+        },
+        {
+          id: "storytelling",
+          title: "Storytelling Artifact",
+          agent: "Storytelling Agent",
+          version: "v1.0",
+          confidence: 85,
+          evidence: 15,
+          status: "Draft",
+          preview: "Storytelling Artifact\n\nDraft presentation structure translating the strategy into a client-facing story.",
+          tabs: {
+            preview: "Storytelling Artifact\n\nDraft presentation structure translating the strategy into a client-facing story.",
+            evidence: "Evidence\n\nSource 15 - shopper drivers\nSource 17 - competitor positioning gap",
+            versions: "Version History\n\nv1.0 - Draft",
+            notes: "Notes\n\nNeeds a sharper opening contrast.\nAdd channel-specific proof.",
+            activity: "Activity\n\n11 May 2026 - Created by Storytelling Agent"
+          }
+        }
+      ],
+      chatInput: "",
+      chatMessages: [
+        {
+          role: "user",
+          time: "10:45",
+          body: "Why did MiAI recommend Healthy Convenience as the main positioning?"
+        },
+        {
+          role: "assistant",
+          time: "10:45",
+          body: "MiAI recommended Healthy Convenience because:\n\n• convenience is the strongest recurring category driver\n• McCain Air Fries supports an easy, no-oil cooking cue\n• competitors concentrate more heavily on value or premium than on practical healthy convenience",
+          sources: "Sources: 12, 15, 17"
+        },
+        {
+          role: "user",
+          time: "10:46",
+          body: "Rewrite this strategy for client presentation."
+        },
+        {
+          role: "assistant",
+          time: "10:46",
+          body: "I can generate a client-facing storyline version of the Strategy Artifact and add it to the workspace.",
+          sources: "Sources: 15, 17",
+          createArtifact: true
+        }
+      ],
+      exportOptions: {
+        executiveSummary: true,
+        recommendations: true,
+        evidence: true,
+        charts: true,
+        agentContributions: false,
+        appendix: false
+      },
+      exportFileName: "McCain_Makro_Healthy_Convenience_Strategy_v1_2"
+    };
+
+    const projects = [
+      {
+        id: "mccain",
+        name: "McCain x Makro Thailand",
+        category: "Retail strategy",
+        status: "Needs Review",
+        progress: 76,
+        activeAgent: "Strategy Agent",
+        artifacts: 6,
+        review: "2 pending"
+      },
+      {
+        id: "nestle",
+        name: "Nestle RTD",
+        category: "Category diagnosis",
+        status: "Context Repair",
+        progress: 34,
+        activeAgent: "Context Agent",
+        artifacts: 2,
+        review: "repair needed"
+      },
+      {
+        id: "cp",
+        name: "CP Axtra",
+        category: "Business writing",
+        status: "Approved",
+        progress: 100,
+        activeAgent: "Decision Agent",
+        artifacts: 4,
+        review: "locked"
+      }
+    ];
+
+    const jobModes = [
+      {
+        id: "context",
+        finding: "Messy context",
+        signal: "Many files, unclear brief, incomplete input",
+        title: "Context Builder",
+        agents: "Context Agent",
+        artifacts: "Context Summary",
+        runtime: "8-12 minutes"
+      },
+      {
+        id: "diagnosis",
+        finding: "Problem unclear",
+        signal: "Market issue, audience tension, weak problem statement",
+        title: "Diagnosis & Insight",
+        agents: "Context + Diagnosis Agents",
+        artifacts: "Problem Definition",
+        runtime: "8-12 minutes"
+      },
+      {
+        id: "strategy-development",
+        finding: "Direction needed",
+        signal: "Need recommendation, campaign idea, positioning",
+        title: "Strategy Development",
+        agents: "Context + Diagnosis + Strategy Agents",
+        artifacts: "Strategy Blueprint",
+        runtime: "10-14 minutes"
+      },
+      {
+        id: "content-activation",
+        finding: "Execution needed",
+        signal: "Need content pillars, activation roadmap, customer journey",
+        title: "Content & Activation Planning",
+        agents: "Strategy + Planning Agents",
+        artifacts: "Activation Plan",
+        runtime: "10-14 minutes"
+      },
+      {
+        id: "creator-channel",
+        finding: "KOL / channel needed",
+        signal: "Need creators, channels, formats, budget allocation",
+        title: "Creator & Channel Planning",
+        agents: "Strategy + Channel Agents",
+        artifacts: "KOL / Channel Matrix",
+        runtime: "10-14 minutes"
+      },
+      {
+        id: "storytelling",
+        finding: "Deck needed",
+        signal: "Need storyline, pitch structure, slide narrative",
+        title: "Storytelling Presentation",
+        agents: "Strategy + Storytelling Agents",
+        artifacts: "Slide Narrative",
+        runtime: "8-12 minutes"
+      },
+      {
+        id: "creative-asset",
+        finding: "Visual needed",
+        signal: "Need mockup, diagram, concept visual, infographic",
+        title: "Creative Asset Generation",
+        agents: "Design + Visualization Agents",
+        artifacts: "Visual Asset",
+        runtime: "8-12 minutes"
+      },
+      {
+        id: "business-writing",
+        finding: "Writing needed",
+        signal: "Need proposal, executive summary, email, meeting notes",
+        title: "Business Writing",
+        agents: "Writing Agent",
+        artifacts: "Business Document",
+        runtime: "6-10 minutes"
+      },
+      {
+        id: "framework-mapping",
+        finding: "Framework needed",
+        signal: "Need to fill canvas, matrix, template, client format",
+        title: "Framework Mapping",
+        agents: "Framework Agent",
+        artifacts: "Framework-filled Template",
+        runtime: "6-10 minutes"
+      },
+      {
+        id: "review-optimization",
+        finding: "Quality check needed",
+        signal: "Existing output needs review, polish, regenerate",
+        title: "Review & Optimization",
+        agents: "Review + Editing Agents",
+        artifacts: "Review Report",
+        runtime: "6-10 minutes"
+      }
+    ];
+
+    const navList = document.getElementById("nav-list");
+    const screenShell = document.getElementById("screen-shell");
+    const screenTitle = document.getElementById("screen-title");
+    const screenCopy = document.getElementById("screen-copy");
+    const topStatusPill = document.getElementById("top-status-pill");
+
+    function getCurrentScreen() {
+      return screens.find((screen) => screen.id === state.currentScreen);
+    }
+
+    function getActiveArtifact() {
+      return state.artifacts.find((artifact) => artifact.id === state.activeArtifactId);
+    }
+
+    function getActiveChatThread() {
+      const thread = state.projectChatThreads.find((item) => item.id === state.activeChatThreadId);
+      if (thread) return thread;
+      state.activeChatThreadId = state.projectChatThreads[0].id;
+      return state.projectChatThreads[0];
+    }
+
+    function getSelectedJobMode() {
+      const selectedMode = jobModes.find((mode) => mode.id === state.selectedJobMode);
+      if (selectedMode) return selectedMode;
+      state.selectedJobMode = jobModes[0].id;
+      return jobModes[0];
+    }
+
+    function getProjectChatResponse(prompt, thread) {
+      const agent = thread.agent || state.activeChatAgent;
+      let body = "I can help refine the project direction, identify weak logic, and prepare a stronger artifact handoff.";
+      let targetsArtifact = "";
+
+      if (/horeca|operator/i.test(prompt)) {
+        body = "The Horeca case needs clearer decision criteria, stronger proof of operational fit, and a simpler value case before it should be locked into the main strategy artifact.";
+        targetsArtifact = "strategy";
+      } else if (/story|storyline|deck/i.test(prompt)) {
+        body = "For a stronger presentation flow, I would open on the category tension, then move into Healthy Convenience as the strategic release point, and only then land the channel-specific implications.";
+        targetsArtifact = "storytelling";
+      } else if (/risk|weak|concern/i.test(prompt)) {
+        body = "Main risks: over-claiming cross-channel fit, insufficient Horeca evidence, and a strategy narrative that still reads more internal than client-ready.";
+        targetsArtifact = "strategy";
+      } else if (/rewrite|refine|tighten/i.test(prompt)) {
+        body = "I can convert this into a tighter working direction and push it back into the selected artifact as a revision note for the assigned agent.";
+        targetsArtifact = state.activeArtifactId;
+      }
+
+      return {
+        role: "assistant",
+        time: "10:43",
+        agent,
+        body,
+        targetsArtifact
+      };
+    }
+
+    function updateTopbar() {
+      const screen = getCurrentScreen();
+      screenTitle.textContent = screen.label;
+      screenCopy.textContent = screen.copy;
+      const artifact = getActiveArtifact();
+      const status = state.currentScreen === "artifacts-chat" ? artifact.status : state.exportReady ? "Export Ready" : "Awaiting Review";
+      topStatusPill.textContent = `Status: ${status}`;
+    }
+
+    function renderNav() {
+      navList.innerHTML = screens
+        .map((screen) => {
+          const active = screen.id === state.currentScreen ? "active" : "";
+          return `
+            <button class="nav-button ${active}" type="button" data-screen="${screen.id}">
+              <strong>${screen.label}</strong>
+            </button>
+          `;
+        })
+        .join("");
+
+      navList.querySelectorAll(".nav-button").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.currentScreen = button.dataset.screen;
+          render();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      });
+    }
+
+    function renderDashboard() {
+      return `
+        <section class="dashboard-grid">
+          <div class="card">
+            <div class="eyebrow">Project metrics</div>
+            <div class="stats">
+              <div class="stat"><div class="eyebrow">In Progress</div><strong>5</strong></div>
+              <div class="stat"><div class="eyebrow">Awaiting Review</div><strong>3</strong></div>
+              <div class="stat"><div class="eyebrow">Approved</div><strong>8</strong></div>
+              <div class="stat"><div class="eyebrow">Artifacts</div><strong>26</strong></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="eyebrow">Active agents</div>
+            <div class="list">
+              <div class="list-item"><strong>Strategy Agent</strong><br /><span class="mini">Running on McCain x Makro Thailand</span></div>
+              <div class="list-item"><strong>Context Agent</strong><br /><span class="mini">Repairing Nestle RTD context</span></div>
+              <div class="list-item"><strong>Decision Agent</strong><br /><span class="mini">Locked CP Axtra export history</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="split-2">
+          <div class="card">
+            <div class="workspace-head">
+              <div>
+                <div class="eyebrow">Projects</div>
+                <h3 class="section-title">Active client engagements</h3>
+              </div>
+              <button class="button primary" id="dashboard-new-project">New Project</button>
+            </div>
+            <div class="project-grid">
+              ${projects
+                .map((project) => {
+                  const selected = project.id === state.selectedProjectId ? "selected" : "";
+                  return `
+                    <button class="project-card ${selected}" type="button" data-project="${project.id}">
+                      <div class="project-head">
+                        <div>
+                          <div class="eyebrow">${project.category}</div>
+                          <h4>${project.name}</h4>
+                        </div>
+                        <span class="badge ${project.id === state.selectedProjectId ? "inverse" : ""}">${project.status}</span>
+                      </div>
+                      <div class="progress"><span style="width:${project.progress}%"></span></div>
+                      <div class="meta-row">
+                        <span>Active agent: ${project.activeAgent}</span>
+                        <span>${project.artifacts} artifacts</span>
+                        <span>${project.review}</span>
+                      </div>
+                    </button>
+                  `;
+                })
+                .join("")}
+            </div>
+          </div>
+          <div class="card">
+            <div class="eyebrow">Review queue</div>
+            <h3 class="section-title">Pending actions</h3>
+            <div class="list">
+              <div class="list-item"><strong>Strategy Artifact v1.2</strong><br /><span class="mini">McCain x Makro Thailand · Awaiting Review</span></div>
+              <div class="list-item"><strong>Diagnosis Artifact v1.1</strong><br /><span class="mini">McCain x Makro Thailand · Awaiting Review</span></div>
+              <div class="list-item"><strong>Context Repair</strong><br /><span class="mini">Nestle RTD · Required context field missing</span></div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderCreateProject() {
+      const modes = [
+        {
+          id: "file-first",
+          title: "File-First",
+          body: "Upload files first. MiAI creates the project shell and starts extraction immediately."
+        },
+        {
+          id: "instruction-files",
+          title: "Instruction + Files",
+          body: "Combine uploaded sources with a short working instruction."
+        },
+        {
+          id: "brief-first",
+          title: "Brief-First",
+          body: "Fill a structured brief before any file upload is available."
+        }
+      ];
+
+      const creation = state.projectCreation;
+      const activeMode = state.creationMode;
+      const fileFirstReady = creation.fileFirstFiles.some((file) => file.status === "Completed");
+      const instructionReady =
+        creation.instructionFiles.some((file) => file.status === "Completed") &&
+        creation.instructionText.trim().length > 20;
+      const briefReady = Object.values(creation.brief).every((value) => value.trim().length > 0);
+      const readinessByMode = {
+        "file-first": fileFirstReady,
+        "instruction-files": instructionReady,
+        "brief-first": briefReady
+      };
+      const isReady = readinessByMode[activeMode];
+
+      const modeDetail =
+        activeMode === "file-first"
+          ? `
+            <div class="card">
+              <div class="eyebrow">File intake</div>
+              <h3 class="section-title">Uploaded sources</h3>
+              <div class="list" style="margin-top: 16px;">
+                ${creation.fileFirstFiles
+                  .map(
+                    (file) => `
+                      <div class="list-item">
+                        <strong>${file.name}</strong><br />
+                        <span class="mini">${file.kind} · ${file.status}</span>
+                      </div>
+                    `
+                  )
+                  .join("")}
+              </div>
+              <div class="action-row" style="margin-top: 14px;">
+                <button class="button" id="add-file-first-file">Add Sample File</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="eyebrow">Readiness</div>
+              <h3 class="section-title">${fileFirstReady ? "Ready to continue" : "Waiting for usable extracted files"}</h3>
+              <p class="section-copy">At least one completed extraction is required.</p>
+            </div>
+          `
+          : activeMode === "instruction-files"
+            ? `
+              <div class="card">
+                <div class="eyebrow">Instruction set</div>
+                <h3 class="section-title">Working input</h3>
+                <div class="list" style="margin-top: 16px;">
+                  <div>
+                    <label class="eyebrow" for="instruction-files-text">Working instruction</label>
+                    <textarea id="instruction-files-text">${creation.instructionText}</textarea>
+                  </div>
+                  ${creation.instructionFiles
+                    .map(
+                      (file) => `
+                        <div class="list-item">
+                          <strong>${file.name}</strong><br />
+                          <span class="mini">${file.kind} · ${file.status}</span>
+                        </div>
+                      `
+                    )
+                    .join("")}
+                </div>
+                <div class="action-row" style="margin-top: 14px;">
+                  <button class="button" id="add-instruction-file">Add Supporting File</button>
+                </div>
+              </div>
+              <div class="card">
+                <div class="eyebrow">Readiness</div>
+                <h3 class="section-title">${instructionReady ? "Ready to continue" : "Instruction or file support still missing"}</h3>
+                <p class="section-copy">Requires a usable instruction and one completed supporting file.</p>
+              </div>
+            `
+            : `
+              <div class="card">
+                <div class="eyebrow">Project brief</div>
+                <h3 class="section-title">Structured inputs</h3>
+                <div class="list" style="margin-top: 16px;">
+                  <div>
+                    <label class="eyebrow" for="brief-business-goal">Business goal</label>
+                    <textarea id="brief-business-goal">${creation.brief.businessGoal}</textarea>
+                  </div>
+                  <div>
+                    <label class="eyebrow" for="brief-audience">Audience</label>
+                    <input id="brief-audience" value="${escapeHtml(creation.brief.audience)}" />
+                  </div>
+                  <div>
+                    <label class="eyebrow" for="brief-market-context">Market context</label>
+                    <textarea id="brief-market-context">${creation.brief.marketContext}</textarea>
+                  </div>
+                  <div>
+                    <label class="eyebrow" for="brief-constraints">Constraints</label>
+                    <textarea id="brief-constraints">${creation.brief.constraints}</textarea>
+                  </div>
+                  <div>
+                    <label class="eyebrow" for="brief-deliverable">Deliverable type</label>
+                    <input id="brief-deliverable" value="${escapeHtml(creation.brief.deliverableType)}" />
+                  </div>
+                </div>
+                <div class="action-row" style="margin-top: 14px;">
+                  <button class="button ghost" id="save-brief-draft">Save Draft</button>
+                </div>
+              </div>
+              <div class="card">
+                <div class="eyebrow">Readiness</div>
+                <h3 class="section-title">${briefReady ? "Ready to continue" : "Required brief fields are still incomplete"}</h3>
+                <p class="section-copy">All core brief fields must be completed.</p>
+              </div>
+            `;
+
+      return `
+        <section class="card">
+          <div class="eyebrow">Project setup</div>
+          <h3 class="section-title">Choose the project creation mode</h3>
+          <div class="modes-grid" style="margin-top: 16px;">
+            ${modes
+              .map((mode) => {
+                const selected = state.creationMode === mode.id ? "selected" : "";
+                return `
+                  <button class="mode-card ${selected}" type="button" data-mode="${mode.id}">
+                    <div class="eyebrow">Creation mode</div>
+                    <h4>${mode.title}</h4>
+                    <p class="section-copy">${mode.body}</p>
+                  </button>
+                `;
+              })
+              .join("")}
+          </div>
+        </section>
+
+        <section class="split-2">
+          <div class="card">
+            <div class="eyebrow">Project shell</div>
+            <h3 class="section-title">Core project details</h3>
+            <div class="list" style="margin-top: 16px;">
+              <div>
+                <label class="eyebrow" for="project-name-input">Project name</label>
+                <input id="project-name-input" value="${escapeHtml(creation.projectName)}" />
+              </div>
+              <div class="list-item"><strong>Supported file types</strong><br /><span class="mini">PDF, PPTX, DOCX, XLSX, PNG. Unsupported files should fail without blocking valid files.</span></div>
+            </div>
+          </div>
+
+          ${modeDetail}
+        </section>
+
+        <section class="card">
+          <div class="workspace-head">
+            <div>
+              <div class="eyebrow">Launch readiness</div>
+              <h3 class="section-title" id="creation-readiness-title">${isReady ? "Ready for Context Packet review" : "Additional required input needed"}</h3>
+            </div>
+            <span class="badge ${isReady ? "inverse" : "outline"}" id="creation-readiness-badge">${isReady ? "Ready" : "Incomplete"}</span>
+          </div>
+          <div class="action-row" style="margin-top: 14px;">
+            <button class="button primary" id="continue-to-context" ${isReady ? "" : "disabled"}>Continue to Context Packet</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function getCreationReadiness() {
+      const creation = state.projectCreation;
+      const fileFirstReady = creation.fileFirstFiles.some((file) => file.status === "Completed");
+      const instructionReady =
+        creation.instructionFiles.some((file) => file.status === "Completed") &&
+        creation.instructionText.trim().length > 20;
+      const briefReady = Object.values(creation.brief).every((value) => value.trim().length > 0);
+      const readinessByMode = {
+        "file-first": fileFirstReady,
+        "instruction-files": instructionReady,
+        "brief-first": briefReady
+      };
+      return readinessByMode[state.creationMode];
+    }
+
+    function refreshCreateProjectReadiness() {
+      const isReady = getCreationReadiness();
+      const title = document.getElementById("creation-readiness-title");
+      const badge = document.getElementById("creation-readiness-badge");
+      const button = document.getElementById("continue-to-context");
+
+      if (title) {
+        title.textContent = isReady
+          ? "Ready for Context Packet review"
+          : "Additional required input needed";
+      }
+
+      if (badge) {
+        badge.textContent = isReady ? "Ready" : "Incomplete";
+        badge.className = `badge ${isReady ? "inverse" : "outline"}`;
+      }
+
+      if (button) {
+        button.disabled = !isReady;
+      }
+    }
+
+    function renderContextPacket() {
+      const missingResolved = state.contextFields.missingField.trim().length > 0;
+      const addedSourceCount =
+        state.sourceExpansion.files.length +
+        state.sourceExpansion.links.length +
+        state.sourceExpansion.webQueries.length;
+      const confidence = missingResolved ? Math.min(94, 86 + addedSourceCount) : Math.min(82, 72 + addedSourceCount);
+      return `
+        <section class="split-3">
+          <div class="card">
+            <div class="eyebrow">Extracted brief</div>
+            <h3 class="section-title">Structured context</h3>
+            <div class="list">
+              <div>
+                <label class="eyebrow" for="goal-input">Business goal</label>
+                <textarea id="goal-input">${state.contextFields.businessGoal}</textarea>
+              </div>
+              <div>
+                <label class="eyebrow" for="audience-input">Audience</label>
+                <input id="audience-input" value="${escapeHtml(state.contextFields.audience)}" />
+              </div>
+              <div>
+                <label class="eyebrow" for="timeline-input">Timeline</label>
+                <input id="timeline-input" value="${escapeHtml(state.contextFields.timeline)}" />
+              </div>
+              <div>
+                <label class="eyebrow" for="output-input">Required output</label>
+                <input id="output-input" value="${escapeHtml(state.contextFields.requiredOutput)}" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="eyebrow">Confidence and evidence</div>
+            <h3 class="section-title">${confidence} / 100</h3>
+            <p class="section-copy">Confidence is driven by source coverage, evidence density, and whether required fields have been resolved manually or automatically.</p>
+            <div class="list" style="margin-top: 16px;">
+              <div class="list-item"><strong>Source 12</strong><br /><span class="mini">Retail frozen frequency baseline</span></div>
+              <div class="list-item"><strong>Source 15</strong><br /><span class="mini">Purchase drivers 2026</span></div>
+              <div class="list-item"><strong>Source 17</strong><br /><span class="mini">Competitor report Q1'26</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="eyebrow">Missing fields</div>
+            <h3 class="section-title">${missingResolved ? "All required fields resolved" : "1 blocking field remains"}</h3>
+            <p class="section-copy">${missingResolved ? "The blocking context field has been resolved and the packet can move forward." : "Add the missing decision criteria or use one of the guided actions below to unblock this packet."}</p>
+            <div class="list" style="margin-top: 16px;">
+              <div class="list-item"><strong>Extracted facts</strong><br /><span class="mini">Makro channel, frozen category, convenience signal, McCain Air Fries usage cue.</span></div>
+              <div class="list-item"><strong>AI assumptions</strong><br /><span class="mini">Healthy Convenience can scale across family shoppers and Horeca operators equally.</span></div>
+              <div class="list-item"><strong>What is missing</strong><br /><span class="mini">Define how Horeca buyers actually decide. A usable answer should name the purchase or operational criteria MiAI should optimize for.</span></div>
+              <div class="list-item"><strong>Helpful examples</strong><br /><span class="mini">Examples: speed of prep, consistency, portion control, margin fit, storage footprint, kitchen training burden.</span></div>
+              <div>
+                <label class="eyebrow" for="missing-input">Resolve missing field: Horeca decision criteria</label>
+                <textarea id="missing-input" placeholder="Example: Horeca buyers prioritize fast prep, consistent output, margin fit, and low staff training requirements.">${state.contextFields.missingField}</textarea>
+              </div>
+            </div>
+            <div class="action-row" style="margin-top: 14px;">
+              <button class="button" id="use-suggested-resolution">Use Suggested Resolution</button>
+              <button class="button" id="mark-assumption-resolution">Mark as Temporary Assumption</button>
+              <button class="button ghost" id="repair-context-field">Ask MiAI to Repair Context</button>
+              <button class="button primary" id="confirm-context" ${missingResolved ? "" : "disabled"}>Confirm Context</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="split-2">
+          <div class="card">
+            <div class="eyebrow">Expand sources</div>
+            <h3 class="section-title">Add more files, links, or web research</h3>
+            <div class="list">
+              <div class="list-item"><strong>When to use this</strong><br /><span class="mini">Add more sources when the brief is thin, the evidence is weak, or a required field cannot be confirmed from the current packet.</span></div>
+              <div>
+                <label class="eyebrow" for="source-url-input">Add source URL</label>
+                <div class="composer">
+                  <input id="source-url-input" placeholder="Paste a website or document link..." value="${escapeHtml(state.sourceExpansion.urlInput)}" />
+                  <button class="button" id="add-source-url">Add URL</button>
+                </div>
+              </div>
+              <div>
+                <label class="eyebrow" for="web-query-input">Run web research query</label>
+                <div class="composer">
+                  <input id="web-query-input" placeholder="Example: Thailand Horeca operator decision criteria frozen food" value="${escapeHtml(state.sourceExpansion.webQueryInput)}" />
+                  <button class="button" id="run-web-query">Add Search</button>
+                </div>
+              </div>
+            </div>
+            <div class="action-row" style="margin-top: 14px;">
+              <button class="button" id="add-supporting-file">Add Supporting File</button>
+              <button class="button ghost" id="source-pack-template">Use Suggested Source Pack</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="eyebrow">Queued additions</div>
+            <h3 class="section-title">New source intake</h3>
+            <div class="list">
+              <div class="list-item"><strong>Files</strong><br /><span class="mini">${state.sourceExpansion.files.map((file) => `${file.name} (${file.status})`).join(" · ")}</span></div>
+              <div class="list-item"><strong>Links</strong><br /><span class="mini">${state.sourceExpansion.links.map((link) => `${link.title} (${link.status})`).join(" · ")}</span></div>
+              <div class="list-item"><strong>Web research</strong><br /><span class="mini">${state.sourceExpansion.webQueries.map((item) => `${item.query} (${item.status})`).join(" · ")}</span></div>
+              <div class="list-item"><strong>Effect on packet</strong><br /><span class="mini">New sources increase evidence coverage and can be used to repair missing fields before launch.</span></div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderJobMode() {
+      const selectedMode = getSelectedJobMode();
+      return `
+        <section class="details-grid">
+          <div class="card">
+            <div class="eyebrow">Ready to launch</div>
+            <h3 class="section-title">Choose the job mode</h3>
+            <div class="job-grid job-mode-grid" style="margin-top: 16px;">
+              ${jobModes
+                .map((mode) => {
+                  const selected = mode.id === state.selectedJobMode ? "selected" : "";
+                  return `
+                    <button class="mode-card job-mode-card ${selected}" type="button" data-job-mode="${mode.id}" aria-pressed="${mode.id === state.selectedJobMode ? "true" : "false"}">
+                      <div class="workspace-head">
+                        <div class="eyebrow">${mode.finding}</div>
+                        ${mode.id === state.selectedJobMode ? `<span class="badge inverse">Selected</span>` : ""}
+                      </div>
+                      <h4>${mode.title}</h4>
+                      <p class="section-copy">${mode.signal}</p>
+                      <div class="meta-row">
+                        <span>${mode.artifacts}</span>
+                      </div>
+                    </button>
+                  `;
+                })
+                .join("")}
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="eyebrow">Mode preview</div>
+            <h3 class="section-title">${selectedMode.title}</h3>
+            <div class="list">
+              <div class="list-item"><strong>Finding type</strong><br /><span class="mini">${selectedMode.finding}</span></div>
+              <div class="list-item"><strong>Detected signal</strong><br /><span class="mini">${selectedMode.signal}</span></div>
+              <div class="list-item"><strong>Activated agents</strong><br /><span class="mini">${selectedMode.agents}</span></div>
+              <div class="list-item"><strong>Primary artifact</strong><br /><span class="mini">${selectedMode.artifacts}</span></div>
+              <div class="list-item"><strong>Estimated runtime</strong><br /><span class="mini">${selectedMode.runtime}</span></div>
+              <div class="list-item"><strong>Release control</strong><br /><span class="mini">Export stays blocked until final approval or version lock.</span></div>
+            </div>
+            <div class="action-row" style="margin-top: 14px;">
+              <button class="button primary" id="launch-job-mode">Launch Job Mode</button>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderArtifactsChat() {
+      const artifact = getActiveArtifact();
+      return `
+        <section class="workspace">
+          <div class="workspace-panel">
+            <div class="workspace-head">
+              <div>
+                <div class="eyebrow">Artifacts Mode</div>
+                <h4>Generated artifacts</h4>
+              </div>
+              <button class="button" id="new-artifact-button">New Artifact</button>
+            </div>
+
+            <div class="filters">
+              <input value="Search artifacts" aria-label="Artifact search" />
+              <select><option>All Types</option></select>
+              <select><option>All Agents</option></select>
+              <select><option>All Status</option></select>
+            </div>
+
+            <div class="artifact-grid">
+              ${state.artifacts
+                .map((item) => {
+                  const selected = item.id === state.activeArtifactId ? "selected" : "";
+                  return `
+                    <button class="artifact-card ${selected}" type="button" data-artifact="${item.id}">
+                      <div class="item-head">
+                        <div class="eyebrow">${item.agent}</div>
+                        <span class="badge ${item.id === state.activeArtifactId ? "inverse" : ""}">${item.status}</span>
+                      </div>
+                      <h4>${item.title}</h4>
+                      <div class="meta-row">
+                        <span>${item.version}</span>
+                        <span>${item.confidence}% confidence</span>
+                        <span>${item.evidence} evidence</span>
+                      </div>
+                    </button>
+                  `;
+                })
+                .join("")}
+            </div>
+
+            <div class="card">
+              <div class="workspace-head">
+                <div>
+                  <div class="eyebrow">Selected artifact</div>
+                  <h4>${artifact.title} ${artifact.version}</h4>
+                </div>
+                <span class="badge">${artifact.status}</span>
+              </div>
+
+              <div class="tabs" style="margin-top: 14px;">
+                ${["preview", "evidence", "versions", "notes", "activity"]
+                  .map((tab) => {
+                    const active = tab === state.activeArtifactTab ? "active" : "";
+                    const label = tab === "versions" ? "Version History" : tab.charAt(0).toUpperCase() + tab.slice(1);
+                    return `<button class="tab ${active}" type="button" data-tab="${tab}">${label}</button>`;
+                  })
+                  .join("")}
+              </div>
+
+              <div class="preview-box" style="margin-top: 14px;">${artifact.tabs[state.activeArtifactTab]}</div>
+
+              <div class="action-row" style="margin-top: 14px;">
+                <button class="primary" data-artifact-action="approve">Approve</button>
+                <button data-artifact-action="edit">Edit</button>
+                <button data-artifact-action="reject">Reject</button>
+                <button data-artifact-action="regenerate">Regenerate</button>
+                <button data-artifact-action="lock">Lock Version</button>
+                <button data-artifact-action="export">Export</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="workspace-panel">
+            <div>
+              <div class="eyebrow">Context-Aware Chat</div>
+              <h4>Artifact review chat</h4>
+            </div>
+
+            <div class="card">
+              <div class="meta-row">
+                <span>Using: Approved Context v1.0</span>
+                <span>Selected artifact: ${artifact.title}</span>
+                <span>Approved context only: ON</span>
+              </div>
+            </div>
+
+            <div class="messages">
+              ${state.chatMessages
+                .map((message, index) => {
+                  return `
+                    <div class="message ${message.role}">
+                      <div class="message-head">
+                        <strong>${message.role === "assistant" ? "MiAI" : "You"}</strong>
+                        <span class="mini">${message.time}</span>
+                      </div>
+                      <div class="message-body">${message.body}</div>
+                      ${message.sources ? `<div class="sources">${message.sources}</div>` : ""}
+                      ${message.createArtifact ? `<div class="action-row" style="margin-top: 10px;"><button class="button" data-create-from-chat="${index}">Create Artifact from answer</button></div>` : ""}
+                    </div>
+                  `;
+                })
+                .join("")}
+            </div>
+
+            <div class="chip-row">
+              <button class="chip interactive" data-chat-chip="Compare v1.1 vs v1.2">Compare v1.1 vs v1.2</button>
+              <button class="chip interactive" data-chat-chip="What is missing?">What is missing?</button>
+              <button class="chip interactive" data-chat-chip="Explain with evidence">Explain with evidence</button>
+              <button class="chip interactive" data-chat-chip="Suggest next step">Suggest next step</button>
+            </div>
+
+            <div class="composer">
+              <input id="chat-input" placeholder="Ask something about this project..." value="${escapeHtml(state.chatInput)}" />
+              <button id="send-chat-button">Send</button>
+            </div>
+          </div>
+
+          <div class="workspace-panel">
+            <div class="card">
+              <div class="eyebrow">Active Context</div>
+              <h4>Context Packet v1.0</h4>
+              <p class="section-copy">Approved and active across review and export.</p>
+            </div>
+
+            <div class="card">
+              <div class="eyebrow">Related Artifacts</div>
+              <div class="list">
+                <div class="list-item">Strategy Artifact v1.2</div>
+                <div class="list-item">Diagnosis Artifact v1.1</div>
+                <div class="list-item">Context Summary v1.0</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="eyebrow">Top Evidence</div>
+              <div class="list">
+                <div class="list-item">Market Survey 2026 - Frozen Food Frequency</div>
+                <div class="list-item">Purchase Drivers 2026</div>
+                <div class="list-item">Competitor Report Q1'26</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="eyebrow">Review Notes</div>
+              <div class="list">
+                <div class="list-item">11 May - The direction is good. Need stronger data on HoReCa.</div>
+                <div class="list-item">10 May - Approved assumptions.</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="eyebrow">Actions</div>
+              <div class="action-row" style="margin-top: 10px;">
+                <button class="button" id="follow-up-artifact">Create Follow-up Artifact</button>
+                <button class="button" data-artifact-action="regenerate">Regenerate Selected Artifact</button>
+                <button class="button" id="add-note-button">Add Note to Review</button>
+                <button class="button primary" data-artifact-action="export">Send to Export</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderChatMode() {
+      const artifact = getActiveArtifact();
+      const activeThread = getActiveChatThread();
+      const agents = [
+        "Context Agent",
+        "Diagnosis Agent",
+        "Strategy Agent",
+        "Storytelling Agent",
+        "Writing Agent"
+      ];
+
+      return `
+        <section class="chat-mode-shell">
+          <div class="workspace-panel">
+            <div class="card">
+              <div class="workspace-head">
+                <div>
+                  <div class="eyebrow">Chat threads</div>
+                  <h4>Separate workstreams</h4>
+                </div>
+                <button class="button" id="new-chat-thread">New Chat</button>
+              </div>
+              <div class="thread-list" style="margin-top: 16px;">
+                ${state.projectChatThreads
+                  .map((thread) => {
+                    const active = thread.id === activeThread.id ? "active" : "";
+                    return `
+                      <button class="thread-card ${active}" type="button" data-chat-thread="${thread.id}" aria-pressed="${thread.id === activeThread.id ? "true" : "false"}">
+                        <div class="workspace-head">
+                          <div class="eyebrow">${thread.agent}</div>
+                          ${thread.id === activeThread.id ? `<span class="badge inverse">Open</span>` : `<span class="badge">${thread.messages.length}</span>`}
+                        </div>
+                        <h4>${thread.title}</h4>
+                        <p>${thread.purpose}</p>
+                      </button>
+                    `;
+                  })
+                  .join("")}
+              </div>
+            </div>
+          </div>
+
+          <div class="workspace-panel">
+            <div class="card">
+              <div class="workspace-head">
+                <div>
+                  <div class="eyebrow">Project chat</div>
+                  <h4>${activeThread.title}</h4>
+                </div>
+                <select id="project-chat-agent">
+                  ${agents
+                    .map((agent) => `<option value="${agent}" ${agent === activeThread.agent ? "selected" : ""}>${agent}</option>`)
+                    .join("")}
+                </select>
+              </div>
+
+              <div class="meta-row" style="margin-top: 14px;">
+                <span>Project: ${state.projectCreation.projectName}</span>
+                <span>Focused artifact: ${artifact.title}</span>
+                <span>Purpose: ${activeThread.purpose}</span>
+              </div>
+
+              <div class="messages" style="margin-top: 16px; min-height: 620px;">
+                ${activeThread.messages
+                  .map((message, index) => {
+                    return `
+                      <div class="message ${message.role}">
+                        <div class="message-head">
+                          <strong>${message.role === "assistant" ? message.agent || "MiAI" : "You"}</strong>
+                          <span class="mini">${message.time}</span>
+                        </div>
+                        <div class="message-body">${message.body}</div>
+                        ${message.targetsArtifact ? `<div class="sources">Suggested artifact target: ${message.targetsArtifact}</div>` : ""}
+                        ${message.role === "assistant" && message.targetsArtifact ? `<div class="action-row" style="margin-top: 10px;"><button class="button" data-push-chat-artifact="${index}">Send to Artifact</button></div>` : ""}
+                      </div>
+                    `;
+                  })
+                  .join("")}
+              </div>
+
+              <div class="chip-row">
+                <button class="chip interactive" data-project-chat-chip="Stress-test the current direction">Stress-test the current direction</button>
+                <button class="chip interactive" data-project-chat-chip="What is weak in the argument?">What is weak in the argument?</button>
+                <button class="chip interactive" data-project-chat-chip="Rewrite this for a client deck">Rewrite this for a client deck</button>
+                <button class="chip interactive" data-project-chat-chip="Tighten the Horeca case">Tighten the Horeca case</button>
+              </div>
+
+              <div class="composer">
+                <input id="project-chat-input" placeholder="Use this thread for one focused workstream..." value="${escapeHtml(state.projectChatInput)}" />
+                <button id="send-project-chat-button">Send</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="workspace-panel">
+            <div class="card">
+              <div class="eyebrow">Thread control</div>
+              <h4>Context window strategy</h4>
+              <div class="list">
+                <div class="list-item"><strong>1 chat = 1 workstream</strong><br /><span class="mini">Use separate chats for strategy, deck writing, diagnosis, or revisions to avoid mixing context.</span></div>
+                <div class="list-item"><strong>Keep threads narrow</strong><br /><span class="mini">Focused chats reduce noise and make agent responses more reliable for the next artifact handoff.</span></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="eyebrow">Current focus</div>
+              <h4>${artifact.title} ${artifact.version}</h4>
+              <div class="list">
+                <div class="list-item"><strong>Status</strong><br /><span class="mini">${artifact.status}</span></div>
+                <div class="list-item"><strong>Thread agent</strong><br /><span class="mini">${activeThread.agent}</span></div>
+                <div class="list-item"><strong>Thread size</strong><br /><span class="mini">${activeThread.messages.length} messages in this workstream.</span></div>
+                <div class="list-item"><strong>Next handoff</strong><br /><span class="mini">Push the useful result into notes, then continue in Artifacts + Chat.</span></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="eyebrow">Actions</div>
+              <div class="action-row" style="margin-top: 10px;">
+                <button class="button" id="open-artifact-review">Open Artifact Review</button>
+                <button class="button" id="seed-chat-from-artifact">Bring Current Artifact Into Chat</button>
+                <button class="button primary" id="send-chat-to-export">Continue to Export</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderExport() {
+      const artifact = getActiveArtifact();
+      return `
+        <section class="export-grid">
+          <div class="card">
+            <div class="eyebrow">Export configuration</div>
+            <h3 class="section-title">Prepare the final artifact</h3>
+
+            <div class="job-grid" style="margin-top: 16px;">
+              ${["pdf", "pptx", "docx"]
+                .map((format) => {
+                  const selected = state.exportFormat === format ? "selected" : "";
+                  return `
+                    <button class="export-card ${selected}" type="button" data-export-format="${format}">
+                      <div class="eyebrow">Format</div>
+                      <h4>${format.toUpperCase()}</h4>
+                      <p class="section-copy">${format === "pdf" ? "Document export for review and circulation." : format === "pptx" ? "Slide export for presentation delivery." : "Editable narrative export for working documents."}</p>
+                    </button>
+                  `;
+                })
+                .join("")}
+            </div>
+
+            <div class="check-grid" style="margin-top: 16px;">
+              ${[
+                ["executiveSummary", "Executive Summary"],
+                ["recommendations", "Key Insights & Recommendations"],
+                ["evidence", "Supporting Data & Evidence"],
+                ["charts", "Charts & Visuals"],
+                ["agentContributions", "Agent Contributions"],
+                ["appendix", "Appendix & References"]
+              ]
+                .map(([key, label]) => {
+                  return `
+                    <label class="check">
+                      <input type="checkbox" data-export-check="${key}" ${state.exportOptions[key] ? "checked" : ""} />
+                      <span>${label}</span>
+                    </label>
+                  `;
+                })
+                .join("")}
+            </div>
+
+            <div class="split-2" style="margin-top: 16px;">
+              <div class="card">
+                <div class="eyebrow">Options</div>
+                <div class="list">
+                  <div class="list-item">Page size: A4</div>
+                  <div class="list-item">Orientation: Landscape</div>
+                  <div class="list-item">Quality: Standard</div>
+                  <div class="list-item">Branding: Include logo</div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="eyebrow">File name</div>
+                <input id="export-file-name" value="${escapeHtml(state.exportFileName)}" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="eyebrow">Preview and summary</div>
+            <h3 class="section-title">${artifact.title} ${artifact.version}</h3>
+            <div class="preview-box">${artifact.preview}</div>
+            <div class="table-card" style="margin-top: 16px; padding: 0;">
+              <table>
+                <thead>
+                  <tr><th>Field</th><th>Value</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Project</td><td>McCain x Makro Thailand</td></tr>
+                  <tr><td>Format</td><td>${state.exportFormat.toUpperCase()}</td></tr>
+                  <tr><td>Generated date</td><td>11 May 2026</td></tr>
+                  <tr><td>Estimated pages / slides</td><td>${state.exportFormat === "pptx" ? "18 slides" : "18 pages"}</td></tr>
+                  <tr><td>Citations</td><td>${state.exportOptions.evidence ? "Included" : "Excluded"}</td></tr>
+                  <tr><td>Lock state</td><td>${state.exportReady ? "Ready to export" : "Awaiting final confirmation"}</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="action-row" style="margin-top: 16px;">
+              <button class="button" id="preview-export-button">Preview Export</button>
+              <button class="button primary" id="export-final-button">Export Final Artifact</button>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function addChatResponse(prompt) {
+      const artifact = getActiveArtifact();
+      let response = "MiAI can answer using the approved context, selected artifact, and linked evidence. The next step should keep governance visible and move only the selected artifact forward.";
+      let createArtifact = false;
+
+      if (/compare/i.test(prompt)) {
+        response = "Compared with the earlier version, the current artifact is clearer on Healthy Convenience and stronger on category rationale, but HoReCa support still needs reinforcement.";
+      } else if (/missing/i.test(prompt)) {
+        response = "What is still missing: stronger HoReCa support, clearer risk framing, and a more concise client-facing articulation of the strategic shift.";
+      } else if (/evidence/i.test(prompt)) {
+        response = "The current recommendation is grounded in purchase-driver, frozen-frequency, and competitor-gap evidence. Remaining weak spots should be treated as assumptions until verified.";
+      } else if (/next step/i.test(prompt)) {
+        response = "Suggested next step: approve the strategic direction conditionally, request tighter Horeca proof, then generate the client-facing storyline artifact.";
+      } else if (/rewrite|client/i.test(prompt)) {
+        response = "I can generate a client-facing storyline version of the selected strategy artifact and add it to the workspace.";
+        createArtifact = true;
+      }
+
+      state.chatMessages.push({
+        role: "assistant",
+        time: "10:48",
+        body: response,
+        sources: `Sources: ${artifact.evidence >= 20 ? "12, 15, 17" : "15, 17"}`,
+        createArtifact
+      });
+    }
+
+    function createArtifactFromChat() {
+      state.artifacts.unshift({
+        id: `storyline-${Date.now()}`,
+        title: "Client Storyline Draft",
+        agent: "Storytelling Agent",
+        version: "v0.1",
+        confidence: 82,
+        evidence: 9,
+        status: "Draft",
+        preview: "Client Storyline Draft\n\nThis artifact reframes the Healthy Convenience strategy into a clear client-facing narrative with opening tension, category proof, and implication slides.",
+        tabs: {
+          preview: "Client Storyline Draft\n\nThis artifact reframes the Healthy Convenience strategy into a clear client-facing narrative with opening tension, category proof, and implication slides.",
+          evidence: "Evidence\n\nSource 15 - purchase drivers 2026\nSource 17 - competitor gap",
+          versions: "Version History\n\nv0.1 - Draft - Created from chat answer",
+          notes: "Notes\n\nGenerated directly from Context-Aware Chat for client-facing use.",
+          activity: "Activity\n\nCreated from chat answer"
+        }
+      });
+      state.activeArtifactId = state.artifacts[0].id;
+      state.activeArtifactTab = "preview";
+      state.chatMessages.push({
+        role: "assistant",
+        time: "10:49",
+        body: "A new Client Storyline Draft has been created from the chat answer and added to Artifacts Mode.",
+        sources: "Sources: 15, 17"
+      });
+    }
+
+    function pushProjectChatToArtifact(messageIndex) {
+      const thread = getActiveChatThread();
+      const message = thread.messages[messageIndex];
+      const targetId = message.targetsArtifact || state.activeArtifactId;
+      const artifact = state.artifacts.find((item) => item.id === targetId) || getActiveArtifact();
+      artifact.tabs.notes += `\nChat Mode note from ${thread.title} / ${message.agent}: ${message.body}`;
+      artifact.tabs.activity += `\nUpdated from Chat Mode thread: ${thread.title}`;
+      state.activeArtifactId = artifact.id;
+      state.activeArtifactTab = "notes";
+    }
+
+    function applyArtifactAction(action) {
+      const artifact = getActiveArtifact();
+      if (action === "approve") {
+        artifact.status = "Approved";
+        artifact.tabs.activity += "\nApproved by reviewer";
+      }
+      if (action === "edit") {
+        artifact.tabs.notes += "\nEdit requested: simplify client-facing phrasing.";
+        state.activeArtifactTab = "notes";
+      }
+      if (action === "reject") {
+        artifact.status = "Rejected";
+        artifact.tabs.activity += "\nRejected and routed back for regeneration";
+      }
+      if (action === "regenerate") {
+        artifact.status = "Awaiting Review";
+        artifact.version = bumpVersion(artifact.version);
+        artifact.tabs.versions = `${artifact.tabs.versions}\n${artifact.version} - Awaiting Review`;
+        artifact.tabs.activity += `\nRegenerated to ${artifact.version}`;
+      }
+      if (action === "lock") {
+        artifact.status = "Locked";
+        artifact.tabs.activity += "\nVersion locked for export";
+      }
+      if (action === "export") {
+        state.exportReady = artifact.status === "Approved" || artifact.status === "Locked";
+        if (state.exportReady) {
+          state.currentScreen = "export";
+        } else {
+          artifact.tabs.activity += "\nExport blocked until artifact is approved or locked";
+          state.activeArtifactTab = "activity";
+        }
+      }
+    }
+
+    function bumpVersion(version) {
+      const match = version.match(/^v(\d+)\.(\d+)$/);
+      if (!match) return version;
+      return `v${match[1]}.${Number(match[2]) + 1}`;
+    }
+
+    function bindDashboard() {
+      const buttons = screenShell.querySelectorAll("[data-project]");
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+          state.selectedProjectId = button.dataset.project;
+          render();
+        });
+      });
+
+      const newProject = document.getElementById("dashboard-new-project");
+      if (newProject) {
+        newProject.addEventListener("click", () => {
+          state.currentScreen = "create-project";
+          render();
+        });
+      }
+    }
+
+    function bindCreateProject() {
+      const projectNameInput = document.getElementById("project-name-input");
+      if (projectNameInput) {
+        projectNameInput.addEventListener("input", (e) => {
+          state.projectCreation.projectName = e.target.value;
+        });
+      }
+
+      screenShell.querySelectorAll("[data-mode]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.creationMode = button.dataset.mode;
+          render();
+        });
+      });
+
+      const instructionFilesText = document.getElementById("instruction-files-text");
+      if (instructionFilesText) {
+        instructionFilesText.addEventListener("input", (e) => {
+          state.projectCreation.instructionText = e.target.value;
+          refreshCreateProjectReadiness();
+        });
+      }
+
+      const briefBusinessGoal = document.getElementById("brief-business-goal");
+      if (briefBusinessGoal) {
+        briefBusinessGoal.addEventListener("input", (e) => {
+          state.projectCreation.brief.businessGoal = e.target.value;
+          refreshCreateProjectReadiness();
+        });
+      }
+
+      const briefAudience = document.getElementById("brief-audience");
+      if (briefAudience) {
+        briefAudience.addEventListener("input", (e) => {
+          state.projectCreation.brief.audience = e.target.value;
+          refreshCreateProjectReadiness();
+        });
+      }
+
+      const briefMarketContext = document.getElementById("brief-market-context");
+      if (briefMarketContext) {
+        briefMarketContext.addEventListener("input", (e) => {
+          state.projectCreation.brief.marketContext = e.target.value;
+          refreshCreateProjectReadiness();
+        });
+      }
+
+      const briefConstraints = document.getElementById("brief-constraints");
+      if (briefConstraints) {
+        briefConstraints.addEventListener("input", (e) => {
+          state.projectCreation.brief.constraints = e.target.value;
+          refreshCreateProjectReadiness();
+        });
+      }
+
+      const briefDeliverable = document.getElementById("brief-deliverable");
+      if (briefDeliverable) {
+        briefDeliverable.addEventListener("input", (e) => {
+          state.projectCreation.brief.deliverableType = e.target.value;
+          refreshCreateProjectReadiness();
+        });
+      }
+
+      const addFileFirstFile = document.getElementById("add-file-first-file");
+      if (addFileFirstFile) {
+        addFileFirstFile.addEventListener("click", () => {
+          state.projectCreation.fileFirstFiles.push({
+            name: `extra_source_${state.projectCreation.fileFirstFiles.length + 1}.pdf`,
+            status: "Completed",
+            kind: "Supporting File"
+          });
+          render();
+        });
+      }
+
+      const addInstructionFile = document.getElementById("add-instruction-file");
+      if (addInstructionFile) {
+        addInstructionFile.addEventListener("click", () => {
+          state.projectCreation.instructionFiles.push({
+            name: `supporting_note_${state.projectCreation.instructionFiles.length + 1}.docx`,
+            status: "Completed",
+            kind: "Supporting Note"
+          });
+          render();
+        });
+      }
+
+      const saveBriefDraft = document.getElementById("save-brief-draft");
+      if (saveBriefDraft) {
+        saveBriefDraft.addEventListener("click", () => {
+          state.chatMessages.push({
+            role: "assistant",
+            time: "10:40",
+            body: "Brief draft saved. You can continue editing or move to Context Packet review once all required fields are complete."
+          });
+          render();
+        });
+      }
+
+      const continueButton = document.getElementById("continue-to-context");
+      if (continueButton) {
+        continueButton.addEventListener("click", () => {
+          const creation = state.projectCreation;
+          state.contextFields.businessGoal =
+            state.creationMode === "brief-first"
+              ? creation.brief.businessGoal
+              : state.creationMode === "instruction-files"
+                ? creation.instructionText
+                : "Build a strategy recommendation from the uploaded source set.";
+          state.contextFields.audience =
+            state.creationMode === "brief-first"
+              ? creation.brief.audience
+              : "Audience inferred from uploaded project files.";
+          state.contextFields.timeline = state.creationMode === "brief-first" ? "From structured brief" : "Derived from uploaded source material";
+          state.contextFields.requiredOutput =
+            state.creationMode === "brief-first"
+              ? creation.brief.deliverableType
+              : state.creationMode === "instruction-files"
+                ? "Derived from instruction plus source files"
+                : "Derived from file-first extraction";
+          state.currentScreen = "context-packet";
+          render();
+        });
+      }
+    }
+
+    function bindContextPacket() {
+      const goalInput = document.getElementById("goal-input");
+      const audienceInput = document.getElementById("audience-input");
+      const timelineInput = document.getElementById("timeline-input");
+      const outputInput = document.getElementById("output-input");
+      const missingInput = document.getElementById("missing-input");
+      const confirmButton = document.getElementById("confirm-context");
+      const suggestedButton = document.getElementById("use-suggested-resolution");
+      const assumptionButton = document.getElementById("mark-assumption-resolution");
+      const repairButton = document.getElementById("repair-context-field");
+      const sourceUrlInput = document.getElementById("source-url-input");
+      const addSourceUrl = document.getElementById("add-source-url");
+      const webQueryInput = document.getElementById("web-query-input");
+      const runWebQuery = document.getElementById("run-web-query");
+      const addSupportingFile = document.getElementById("add-supporting-file");
+      const sourcePackTemplate = document.getElementById("source-pack-template");
+
+      if (goalInput) goalInput.addEventListener("input", (e) => state.contextFields.businessGoal = e.target.value);
+      if (audienceInput) audienceInput.addEventListener("input", (e) => state.contextFields.audience = e.target.value);
+      if (timelineInput) timelineInput.addEventListener("input", (e) => state.contextFields.timeline = e.target.value);
+      if (outputInput) outputInput.addEventListener("input", (e) => state.contextFields.requiredOutput = e.target.value);
+      if (missingInput) {
+        missingInput.addEventListener("input", (e) => {
+          state.contextFields.missingField = e.target.value;
+          render();
+        });
+      }
+
+      if (suggestedButton) {
+        suggestedButton.addEventListener("click", () => {
+          state.contextFields.missingField = "Primary Horeca criteria: speed of preparation, consistency across batches, margin fit, freezer storage efficiency, and low training burden for kitchen staff.";
+          render();
+        });
+      }
+
+      if (assumptionButton) {
+        assumptionButton.addEventListener("click", () => {
+          state.contextFields.missingField = "Temporary assumption: Horeca buyers prioritize speed of preparation, consistency, and operational simplicity until direct operator evidence is added.";
+          render();
+        });
+      }
+
+      if (repairButton) {
+        repairButton.addEventListener("click", () => {
+          state.contextFields.missingField = "MiAI repair draft: Horeca operators are likely to select products that reduce prep time, maintain batch consistency, fit freezer operations, and protect serving margin.";
+          render();
+        });
+      }
+
+      if (sourceUrlInput) {
+        sourceUrlInput.addEventListener("input", (e) => {
+          state.sourceExpansion.urlInput = e.target.value;
+        });
+      }
+
+      if (addSourceUrl) {
+        addSourceUrl.addEventListener("click", () => {
+          const value = state.sourceExpansion.urlInput.trim();
+          if (!value) return;
+          state.sourceExpansion.links.unshift({
+            title: value.replace(/^https?:\/\//, "").slice(0, 48),
+            status: "Queued",
+            url: value
+          });
+          state.sourceExpansion.urlInput = "";
+          render();
+        });
+      }
+
+      if (webQueryInput) {
+        webQueryInput.addEventListener("input", (e) => {
+          state.sourceExpansion.webQueryInput = e.target.value;
+        });
+      }
+
+      if (runWebQuery) {
+        runWebQuery.addEventListener("click", () => {
+          const value = state.sourceExpansion.webQueryInput.trim();
+          if (!value) return;
+          state.sourceExpansion.webQueries.unshift({
+            query: value,
+            status: "Queued"
+          });
+          state.sourceExpansion.webQueryInput = "";
+          render();
+        });
+      }
+
+      if (addSupportingFile) {
+        addSupportingFile.addEventListener("click", () => {
+          state.sourceExpansion.files.unshift({
+            name: `supporting_source_${state.sourceExpansion.files.length + 1}.pdf`,
+            status: "Queued",
+            kind: "Supporting File"
+          });
+          render();
+        });
+      }
+
+      if (sourcePackTemplate) {
+        sourcePackTemplate.addEventListener("click", () => {
+          state.sourceExpansion.files.unshift(
+            { name: "operator_interview_pack.pdf", status: "Queued", kind: "Interview Pack" },
+            { name: "category_benchmark_2026.xlsx", status: "Queued", kind: "Benchmark Data" }
+          );
+          state.sourceExpansion.webQueries.unshift(
+            { query: "Thailand horeca frozen fries buyer criteria 2026", status: "Queued" },
+            { query: "Makro Thailand horeca operator trends frozen category", status: "Queued" }
+          );
+          render();
+        });
+      }
+
+      if (confirmButton) {
+        confirmButton.addEventListener("click", () => {
+          state.currentScreen = "job-mode";
+          render();
+        });
+      }
+    }
+
+    function bindJobMode() {
+      getSelectedJobMode();
+      screenShell.querySelectorAll("[data-job-mode]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.selectedJobMode = button.dataset.jobMode;
+          render();
+        });
+      });
+
+      const launch = document.getElementById("launch-job-mode");
+      if (launch) {
+        launch.addEventListener("click", () => {
+          state.currentScreen = "artifacts-chat";
+          render();
+        });
+      }
+    }
+
+    function bindArtifactsChat() {
+      screenShell.querySelectorAll("[data-artifact]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.activeArtifactId = button.dataset.artifact;
+          state.activeArtifactTab = "preview";
+          render();
+        });
+      });
+
+      screenShell.querySelectorAll("[data-tab]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.activeArtifactTab = button.dataset.tab;
+          render();
+        });
+      });
+
+      screenShell.querySelectorAll("[data-artifact-action]").forEach((button) => {
+        button.addEventListener("click", () => {
+          applyArtifactAction(button.dataset.artifactAction);
+          render();
+        });
+      });
+
+      screenShell.querySelectorAll("[data-chat-chip]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.chatInput = button.dataset.chatChip;
+          render();
+        });
+      });
+
+      const chatInput = document.getElementById("chat-input");
+      if (chatInput) {
+        chatInput.addEventListener("input", (e) => {
+          state.chatInput = e.target.value;
+        });
+
+        chatInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            const value = chatInput.value.trim();
+            if (!value) return;
+            state.chatMessages.push({
+              role: "user",
+              time: "10:48",
+              body: value
+            });
+            addChatResponse(value);
+            state.chatInput = "";
+            render();
+          }
+        });
+      }
+
+      const sendButton = document.getElementById("send-chat-button");
+      if (sendButton) {
+        sendButton.addEventListener("click", () => {
+          const value = state.chatInput.trim();
+          if (!value) return;
+          state.chatMessages.push({
+            role: "user",
+            time: "10:48",
+            body: value
+          });
+          addChatResponse(value);
+          state.chatInput = "";
+          render();
+        });
+      }
+
+      screenShell.querySelectorAll("[data-create-from-chat]").forEach((button) => {
+        button.addEventListener("click", () => {
+          createArtifactFromChat();
+          render();
+        });
+      });
+
+      const followUp = document.getElementById("follow-up-artifact");
+      if (followUp) {
+        followUp.addEventListener("click", () => {
+          state.chatInput = "Create a follow-up artifact focused on export-ready client storyline.";
+          render();
+        });
+      }
+
+      const noteButton = document.getElementById("add-note-button");
+      if (noteButton) {
+        noteButton.addEventListener("click", () => {
+          const artifact = getActiveArtifact();
+          artifact.tabs.notes += "\nReview note added: confirm export readiness after Horeca support is strengthened.";
+          state.activeArtifactTab = "notes";
+          render();
+        });
+      }
+
+      const newArtifactButton = document.getElementById("new-artifact-button");
+      if (newArtifactButton) {
+        newArtifactButton.addEventListener("click", () => {
+          state.artifacts.unshift({
+            id: `manual-${Date.now()}`,
+            title: "New Working Artifact",
+            agent: "Strategy Agent",
+            version: "v0.1",
+            confidence: 75,
+            evidence: 5,
+            status: "Draft",
+            preview: "New Working Artifact\n\nThis is a manually created draft artifact waiting for further generation or review.",
+            tabs: {
+              preview: "New Working Artifact\n\nThis is a manually created draft artifact waiting for further generation or review.",
+              evidence: "Evidence\n\nSource 12\nSource 15",
+              versions: "Version History\n\nv0.1 - Draft",
+              notes: "Notes\n\nCreated manually from Artifacts Mode.",
+              activity: "Activity\n\nCreated manually from Artifacts Mode"
+            }
+          });
+          state.activeArtifactId = state.artifacts[0].id;
+          state.activeArtifactTab = "preview";
+          render();
+        });
+      }
+    }
+
+    function bindChatMode() {
+      const thread = getActiveChatThread();
+      const agentSelect = document.getElementById("project-chat-agent");
+      if (agentSelect) {
+        agentSelect.addEventListener("change", (e) => {
+          thread.agent = e.target.value;
+          state.activeChatAgent = e.target.value;
+        });
+      }
+
+      screenShell.querySelectorAll("[data-chat-thread]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.activeChatThreadId = button.dataset.chatThread;
+          const activeThread = getActiveChatThread();
+          state.activeChatAgent = activeThread.agent;
+          state.projectChatInput = "";
+          render();
+        });
+      });
+
+      const newThread = document.getElementById("new-chat-thread");
+      if (newThread) {
+        newThread.addEventListener("click", () => {
+          const nextNumber = state.projectChatThreads.length + 1;
+          const id = `thread-${Date.now()}`;
+          state.projectChatThreads.unshift({
+            id,
+            title: `New Chat ${nextNumber}`,
+            purpose: "Separate workstream for focused agent collaboration.",
+            agent: "Strategy Agent",
+            messages: [
+              {
+                role: "assistant",
+                time: "10:44",
+                agent: "Strategy Agent",
+                body: "New chat created. Use this thread for a distinct task so the context stays narrow and easier to optimize."
+              }
+            ]
+          });
+          state.activeChatThreadId = id;
+          state.activeChatAgent = "Strategy Agent";
+          state.projectChatInput = "";
+          render();
+        });
+      }
+
+      screenShell.querySelectorAll("[data-project-chat-chip]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.projectChatInput = button.dataset.projectChatChip;
+          const input = document.getElementById("project-chat-input");
+          if (input) input.focus();
+        });
+      });
+
+      const input = document.getElementById("project-chat-input");
+      if (input) {
+        input.addEventListener("input", (e) => {
+          state.projectChatInput = e.target.value;
+        });
+
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            const value = input.value.trim();
+            if (!value) return;
+            const activeThread = getActiveChatThread();
+            activeThread.messages.push({
+              role: "user",
+              time: "10:43",
+              body: value
+            });
+            activeThread.messages.push(getProjectChatResponse(value, activeThread));
+            state.projectChatInput = "";
+            render();
+          }
+        });
+      }
+
+      const sendButton = document.getElementById("send-project-chat-button");
+      if (sendButton) {
+        sendButton.addEventListener("click", () => {
+          const value = state.projectChatInput.trim();
+          if (!value) return;
+          const activeThread = getActiveChatThread();
+          activeThread.messages.push({
+            role: "user",
+            time: "10:43",
+            body: value
+          });
+          activeThread.messages.push(getProjectChatResponse(value, activeThread));
+          state.projectChatInput = "";
+          render();
+        });
+      }
+
+      screenShell.querySelectorAll("[data-push-chat-artifact]").forEach((button) => {
+        button.addEventListener("click", () => {
+          pushProjectChatToArtifact(Number(button.dataset.pushChatArtifact));
+          state.currentScreen = "artifacts-chat";
+          render();
+        });
+      });
+
+      const openArtifactReview = document.getElementById("open-artifact-review");
+      if (openArtifactReview) {
+        openArtifactReview.addEventListener("click", () => {
+          state.currentScreen = "artifacts-chat";
+          render();
+        });
+      }
+
+      const seedChatFromArtifact = document.getElementById("seed-chat-from-artifact");
+      if (seedChatFromArtifact) {
+        seedChatFromArtifact.addEventListener("click", () => {
+          const artifact = getActiveArtifact();
+          const activeThread = getActiveChatThread();
+          activeThread.messages.push({
+            role: "assistant",
+            time: "10:44",
+            agent: activeThread.agent,
+            body: `Loaded ${artifact.title} ${artifact.version} into project chat. Current focus: ${artifact.status.toLowerCase()} artifact with ${artifact.evidence} evidence references.`
+          });
+          render();
+        });
+      }
+
+      const sendChatToExport = document.getElementById("send-chat-to-export");
+      if (sendChatToExport) {
+        sendChatToExport.addEventListener("click", () => {
+          state.currentScreen = "export";
+          render();
+        });
+      }
+    }
+
+    function bindExport() {
+      screenShell.querySelectorAll("[data-export-format]").forEach((button) => {
+        button.addEventListener("click", () => {
+          state.exportFormat = button.dataset.exportFormat;
+          render();
+        });
+      });
+
+      screenShell.querySelectorAll("[data-export-check]").forEach((checkbox) => {
+        checkbox.addEventListener("change", (e) => {
+          state.exportOptions[e.target.dataset.exportCheck] = e.target.checked;
+        });
+      });
+
+      const fileName = document.getElementById("export-file-name");
+      if (fileName) {
+        fileName.addEventListener("input", (e) => {
+          state.exportFileName = e.target.value;
+        });
+      }
+
+      const preview = document.getElementById("preview-export-button");
+      if (preview) {
+        preview.addEventListener("click", () => {
+          state.exportReady = true;
+          render();
+        });
+      }
+
+      const exportFinal = document.getElementById("export-final-button");
+      if (exportFinal) {
+        exportFinal.addEventListener("click", () => {
+          state.exportReady = true;
+          const artifact = getActiveArtifact();
+          artifact.status = "Locked";
+          render();
+        });
+      }
+    }
+
+    function renderScreen() {
+      if (state.currentScreen === "dashboard") {
+        screenShell.innerHTML = renderDashboard();
+        bindDashboard();
+        return;
+      }
+
+      if (state.currentScreen === "create-project") {
+        screenShell.innerHTML = renderCreateProject();
+        bindCreateProject();
+        return;
+      }
+
+      if (state.currentScreen === "context-packet") {
+        screenShell.innerHTML = renderContextPacket();
+        bindContextPacket();
+        return;
+      }
+
+      if (state.currentScreen === "job-mode") {
+        screenShell.innerHTML = renderJobMode();
+        bindJobMode();
+        return;
+      }
+
+      if (state.currentScreen === "chat-mode") {
+        screenShell.innerHTML = renderChatMode();
+        bindChatMode();
+        return;
+      }
+
+      if (state.currentScreen === "artifacts-chat") {
+        screenShell.innerHTML = renderArtifactsChat();
+        bindArtifactsChat();
+        return;
+      }
+
+      screenShell.innerHTML = renderExport();
+      bindExport();
+    }
+
+    function render() {
+      renderNav();
+      updateTopbar();
+      renderScreen();
+    }
+
+    render();
+  </script>
+</body>
+</html>
